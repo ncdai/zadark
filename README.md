@@ -37,20 +37,135 @@ https://zadark.com/install
 
 ## Contributing
 
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
-
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement". Don't forget to give the project a star! Thanks again!
-
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Read [DEVELOPMENT.md](./DEVELOPMENT.md)
-4. Commit your changes (`git commit -m "Add some amazing feature"`)
-5. Push to the branch (`git push origin feature/amazing-feature`)
-6. Open a pull request
+Please read the [contributing guide](./CONTRIBUTING.md).
 
 ## License
 
 ZaDark's source code is freely available for use, modification and distribution under the permissions, limitations and conditions listed in the [Mozilla Public License 2.0](./LICENSE).
+
+## Sponsors
+
+This project is proudly supported by:
+
+<table>
+  <tbody>
+    <tr>
+      <td>
+        <a href="https://shadcnstudio.com?utm_source=chanhdai.com&utm_medium=banner&utm_campaign=github#gh-light-mode-only">
+          <img src="https://assets.chanhdai.com/images/sponsors/shadcnstudio.svg?v=2#gh-light-mode-only" alt="shadcnstudio.com" />
+        </a>
+        <a href="https://shadcnstudio.com?utm_source=chanhdai.com&utm_medium=banner&utm_campaign=github#gh-dark-mode-only">
+          <img src="https://assets.chanhdai.com/images/sponsors/shadcnstudio-dark.svg?v=2#gh-dark-mode-only" alt="shadcnstudio.com" />
+        </a>
+      </td>
+      <td>
+        <a href="https://shadcnspace.com#gh-light-mode-only">
+          <img
+            src="https://assets.chanhdai.com/images/sponsors/shadcnspace.svg?v=3#gh-light-mode-only"
+            alt="Shadcn Space"
+          />
+        </a>
+        <a href="https://shadcnspace.com#gh-dark-mode-only">
+          <img
+            src="https://assets.chanhdai.com/images/sponsors/shadcnspace-dark.svg?v=3#gh-dark-mode-only"
+            alt="Shadcn Space"
+          />
+        </a>
+      </td>
+      <td>
+        <a href="https://shadcncraft.com?utm_source=chanhdai.com#gh-light-mode-only">
+          <img
+            src="https://assets.chanhdai.com/images/sponsors/shadcncraft.svg?v=1#gh-light-mode-only"
+            alt="shadcncraft"
+          />
+        </a>
+        <a href="https://shadcncraft.com?utm_source=chanhdai.com#gh-dark-mode-only">
+          <img
+            src="https://assets.chanhdai.com/images/sponsors/shadcncraft-dark.svg?v=1#gh-dark-mode-only"
+            alt="shadcncraft"
+          />
+        </a>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="https://www.shadcnblocks.com?utm_source=chanhdai.com#gh-light-mode-only">
+          <img
+            src="https://assets.chanhdai.com/images/sponsors/shadcnblocks.svg?v=1#gh-light-mode-only"
+            alt="Shadcnblocks"
+          />
+        </a>
+        <a href="https://www.shadcnblocks.com?utm_source=chanhdai.com#gh-dark-mode-only">
+          <img
+            src="https://assets.chanhdai.com/images/sponsors/shadcnblocks-dark.svg?v=1#gh-dark-mode-only"
+            alt="Shadcnblocks"
+          />
+        </a>
+      </td>
+      <td>
+        <a href="https://reactbits.dev?utm_source=chanhdai.com#gh-light-mode-only">
+          <img
+            src="https://assets.chanhdai.com/images/sponsors/reactbits.svg?v=1#gh-light-mode-only"
+            alt="React Bits"
+          />
+        </a>
+        <a href="https://reactbits.dev?utm_source=chanhdai.com#gh-dark-mode-only">
+          <img
+            src="https://assets.chanhdai.com/images/sponsors/reactbits-dark.svg?v=1#gh-dark-mode-only"
+            alt="React Bits"
+          />
+        </a>
+      </td>
+      <td>
+        <a href="https://1password.com?utm_source=chanhdai.com#gh-light-mode-only">
+          <img
+            src="https://assets.chanhdai.com/images/sponsors/1password.svg?v=1#gh-light-mode-only"
+            alt="1Password"
+          />
+        </a>
+        <a href="https://1password.com?utm_source=chanhdai.com#gh-dark-mode-only">
+          <img
+            src="https://assets.chanhdai.com/images/sponsors/1password-dark.svg?v=1#gh-dark-mode-only"
+            alt="1Password"
+          />
+        </a>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="https://uirules.com?utm_source=chanhdai.com#gh-light-mode-only">
+          <img
+            src="https://assets.chanhdai.com/images/sponsors/uirules.svg?v=1#gh-light-mode-only"
+            alt="UI Rules"
+          />
+        </a>
+        <a href="https://uirules.com?utm_source=chanhdai.com#gh-dark-mode-only">
+          <img
+            src="https://assets.chanhdai.com/images/sponsors/uirules-dark.svg?v=1#gh-dark-mode-only"
+            alt="UI Rules"
+          />
+        </a>
+      </td>
+      <td>
+        <a href="https://shoogle.dev?utm_source=chanhdai.com#gh-light-mode-only">
+          <img
+            src="https://assets.chanhdai.com/images/sponsors/shoogle.svg?v=1#gh-light-mode-only"
+            alt="Shoogle"
+          />
+        </a>
+        <a href="https://shoogle.dev?utm_source=chanhdai.com#gh-dark-mode-only">
+          <img
+            src="https://assets.chanhdai.com/images/sponsors/shoogle-dark.svg?v=1#gh-dark-mode-only"
+            alt="Shoogle"
+          />
+        </a>
+      </td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+> Found this project useful? [Sponsor me](https://github.com/sponsors/ncdai) to help with support and maintenance.
 
 ## Contact
 
