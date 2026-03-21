@@ -51,6 +51,20 @@ This project is proudly supported by:
   <tbody>
     <tr>
       <td>
+        <a href="https://1password.com?utm_source=chanhdai.com#gh-light-mode-only">
+          <img
+            src="https://assets.chanhdai.com/images/sponsors/1password.svg?v=1#gh-light-mode-only"
+            alt="1Password"
+          />
+        </a>
+        <a href="https://1password.com?utm_source=chanhdai.com#gh-dark-mode-only">
+          <img
+            src="https://assets.chanhdai.com/images/sponsors/1password-dark.svg?v=1#gh-dark-mode-only"
+            alt="1Password"
+          />
+        </a>
+      </td>
+      <td>
         <a href="https://shadcnstudio.com?utm_source=chanhdai.com&utm_medium=banner&utm_campaign=github#gh-light-mode-only">
           <img src="https://assets.chanhdai.com/images/sponsors/shadcnstudio.svg?v=2#gh-light-mode-only" alt="shadcnstudio.com" />
         </a>
@@ -72,6 +86,8 @@ This project is proudly supported by:
           />
         </a>
       </td>
+    </tr>
+    <tr>
       <td>
         <a href="https://shadcncraft.com?utm_source=chanhdai.com#gh-light-mode-only">
           <img
@@ -86,8 +102,6 @@ This project is proudly supported by:
           />
         </a>
       </td>
-    </tr>
-    <tr>
       <td>
         <a href="https://www.shadcnblocks.com?utm_source=chanhdai.com#gh-light-mode-only">
           <img
@@ -113,20 +127,6 @@ This project is proudly supported by:
           <img
             src="https://assets.chanhdai.com/images/sponsors/reactbits-dark.svg?v=1#gh-dark-mode-only"
             alt="React Bits"
-          />
-        </a>
-      </td>
-      <td>
-        <a href="https://1password.com?utm_source=chanhdai.com#gh-light-mode-only">
-          <img
-            src="https://assets.chanhdai.com/images/sponsors/1password.svg?v=1#gh-light-mode-only"
-            alt="1Password"
-          />
-        </a>
-        <a href="https://1password.com?utm_source=chanhdai.com#gh-dark-mode-only">
-          <img
-            src="https://assets.chanhdai.com/images/sponsors/1password-dark.svg?v=1#gh-dark-mode-only"
-            alt="1Password"
           />
         </a>
       </td>
