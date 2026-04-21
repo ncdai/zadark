@@ -1,5 +1,12 @@
 # Changelog
 
+## ZaDark 26.2
+
+- Sửa lỗi ẩn tin nhắn gần nhất (bao gồm phông chữ) trên Zalo PC `26.3.20`
+- Sửa lỗi Dark Mode: My Documents > Thông tin hội thoại > **Dung lượng lưu trữ**
+
+> Chuyển GitHub Repository từ https://github.com/quaric/zadark sang https://github.com/ncdai/zadark
+
 ## ZaDark 26.1.1
 
 - Cải thiện ZaDark PC: Cho phép xem phiên bản khi chưa cài đặt Zalo PC (`zadark -v` hoặc `zadark --version`)
