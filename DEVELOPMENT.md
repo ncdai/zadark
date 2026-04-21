@@ -6,7 +6,7 @@ This document describes the process for running this application on your local c
 
 1. Clone the repo
     ```bash
-    git clone https://github.com/quaric/zadark.git
+    git clone https://github.com/ncdai/zadark.git
     cd zadark
     ```
 

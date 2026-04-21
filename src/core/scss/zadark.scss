@@ -354,6 +354,7 @@
   --surface-background: var(--NG20);
   --surface-background-subtle: #18191a; // var(--NG15);
   --surface-alt: var(--WA100);
+  --surface-background-overlay: #18191a; // var(--N10);
 
   --layer-background: var(--WA100);
   --layer-background-subtle: #18191a; // var(--N10);
@@ -640,19 +641,31 @@ $FONT_SIZES: (
 );
 
 $LINE_HEIGHTS: (
-  "12": "18px",  // 12 * 1.5
-  "13": "19.5px", // 13 * 1.5
-  "14": "21px",  // 14 * 1.5
-  "15": "22.5px", // 15 * 1.5
-  "16": "24px",  // 16 * 1.5
-  "17": "25.5px", // 17 * 1.5
-  "18": "27px",  // 18 * 1.5
-  "19": "28.5px", // 19 * 1.5
-  "20": "30px",  // 20 * 1.5
-  "21": "31.5px", // 21 * 1.5
-  "22": "33px",  // 22 * 1.5
-  "23": "34.5px", // 23 * 1.5
-  "24": "36px"   // 24 * 1.5
+  "12": "18px",
+  // 12 * 1.5
+  "13": "19.5px",
+  // 13 * 1.5
+  "14": "21px",
+  // 14 * 1.5
+  "15": "22.5px",
+  // 15 * 1.5
+  "16": "24px",
+  // 16 * 1.5
+  "17": "25.5px",
+  // 17 * 1.5
+  "18": "27px",
+  // 18 * 1.5
+  "19": "28.5px",
+  // 19 * 1.5
+  "20": "30px",
+  // 20 * 1.5
+  "21": "31.5px",
+  // 21 * 1.5
+  "22": "33px",
+  // 22 * 1.5
+  "23": "34.5px",
+  // 23 * 1.5
+  "24": "36px" // 24 * 1.5
 );
 
 @mixin zadark-font-sizes() {
@@ -1247,7 +1260,11 @@ html[data-zadark-theme="dark"] {
     .conv-item {
       transition: background-color 100ms ease-in-out;
 
-      .conv-message {
+      .conv-message,
+      // * .z-conv-message (Zalo >= v26.3.20)
+      .z-conv-message {
+        font: 14px / 21px var(--zadark-font-family) !important; // * .z-conv-message style font (Zalo >= v26.3.20)
+
         &.progress-bar {
           .progress-track {
             background-color: var(--NG30) !important;

@@ -1,6 +1,8 @@
 @mixin prv-lastest-message {
   .conv-item {
     .conv-item-body__main .conv-message,
+    // * .z-conv-message (Zalo >= v26.3.20)
+    .conv-item-body__main .z-conv-message,
     .conv-unread-react {
       position: relative;
 
@@ -36,6 +38,8 @@
 
     &:hover {
       .conv-item-body__main .conv-message,
+      // * .z-conv-message (Zalo >= v26.3.20)
+      .conv-item-body__main .z-conv-message,
       .conv-unread-react {
         &::after {
           opacity: 0;

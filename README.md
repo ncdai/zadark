@@ -177,7 +177,7 @@ https://zadark.com/awards
 
 ## Star History
 
-[![Star History](https://starchart.cc/quaric/zadark.svg?variant=adaptive)](https://starchart.cc/quaric/zadark)
+[![Star History](https://starchart.cc/ncdai/zadark.svg?variant=adaptive)](https://starchart.cc/ncdai/zadark)
 
 ## Acknowledgments
 
