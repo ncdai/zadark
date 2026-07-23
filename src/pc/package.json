@@ -1,6 +1,6 @@
 {
   "name": "zadark-pc",
-  "description": "Dark Mode tốt nhất cho Zalo",
+  "description": "Dark Mode cho Zalo",
   "version": "26.2.1",
   "main": "index.js",
   "repository": "https://github.com/quaric/zadark.git",
