@@ -1,6 +1,8 @@
 const fs = require('fs-extra')
 const path = require('path')
 const asar = require('@electron/asar')
+const { getCurrentFuseWire, flipFuses, FuseVersion, FuseV1Options } = require('@electron/fuses')
+const { FuseState } = require('@electron/fuses/dist/constants')
 const HTMLParser = require('node-html-parser')
 const glob = require('glob')
 
@@ -412,6 +414,100 @@ const copyZaDarkAssets = (zaloDir) => {
 }
 
 /**
+ * Electron fuses that prevent Zalo from loading the extracted `app.asar` folder.
+ * Newer Zalo PC versions (e.g. 27.12.31, Electron 43) enable these fuses.
+ */
+const ASAR_FUSES = [
+  FuseV1Options.EnableEmbeddedAsarIntegrityValidation,
+  FuseV1Options.OnlyLoadAppFromAsar
+]
+
+/**
+ * Disables the Electron fuses that block loading the extracted `app.asar` folder.
+ * Only applies on Windows and only when at least one of these fuses is enabled,
+ * so older Zalo PC versions are not modified.
+ * The original `Zalo.exe` is backed up as `Zalo.exe.bak` before flipping the fuses.
+ *
+ * @param {string} zaloDir - The Zalo resources directory (the folder containing `app.asar`).
+ *
+ * @throws {Error} If the fuses cannot be flipped.
+ *
+ * @returns {Promise<void>} A promise that resolves when the fuses are disabled (or nothing needs to be done).
+ */
+const disableAsarFuses = async (zaloDir) => {
+  if (!IS_WIN) {
+    return
+  }
+
+  const zaloExePath = path.join(zaloDir, '..', 'Zalo.exe')
+  const zaloExeBakPath = path.join(zaloDir, '..', 'Zalo.exe.bak')
+
+  if (!isFile(zaloExePath)) {
+    return
+  }
+
+  let fuseWire
+  try {
+    fuseWire = await getCurrentFuseWire(zaloExePath)
+  } catch (error) {
+    // Older Electron versions (< 12) do not have fuses
+    return
+  }
+
+  const enabledFuses = ASAR_FUSES.filter((fuse) => fuseWire[fuse] === FuseState.ENABLE)
+
+  if (!enabledFuses.length) {
+    return
+  }
+
+  let isBackupCreated = false
+
+  try {
+    if (!isFile(zaloExeBakPath)) {
+      printDebug('- copyFile:', zaloExePath, '>', zaloExeBakPath)
+      fs.copyFileSync(zaloExePath, zaloExeBakPath)
+      isBackupCreated = true
+    }
+
+    printDebug('- disableFuses:', zaloExePath, '>', enabledFuses.map((fuse) => FuseV1Options[fuse]).join(', '))
+    await flipFuses(zaloExePath, {
+      version: FuseVersion.V1,
+      [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: false,
+      [FuseV1Options.OnlyLoadAppFromAsar]: false
+    })
+  } catch (error) {
+    // Leave Zalo PC exactly as it was before installing
+    if (isBackupCreated && isFile(zaloExeBakPath)) {
+      printDebug('- deleteFile:', zaloExeBakPath)
+      fs.rmSync(zaloExeBakPath)
+    }
+
+    throw new Error('Khong the cap nhat tap tin "' + zaloExePath + '" (E010). ' + error.message)
+  }
+}
+
+/**
+ * Restores the original `Zalo.exe` from `Zalo.exe.bak` (created by `disableAsarFuses`).
+ *
+ * @param {string} zaloDir - The Zalo resources directory (the folder containing `app.asar`).
+ */
+const restoreZaloExe = (zaloDir) => {
+  const zaloExePath = path.join(zaloDir, '..', 'Zalo.exe')
+  const zaloExeBakPath = path.join(zaloDir, '..', 'Zalo.exe.bak')
+
+  if (!isFile(zaloExeBakPath)) {
+    return
+  }
+
+  if (fs.existsSync(zaloExePath)) {
+    fs.rmSync(zaloExePath)
+  }
+
+  printDebug('- renameFile:', zaloExeBakPath, '>', zaloExePath)
+  fs.renameSync(zaloExeBakPath, zaloExePath)
+}
+
+/**
  * Installs ZaDark by updating the `app.asar` file in the specified Zalo directory with the ZaDark theme.
  *
  * @param {string} zaloDir - The directory where the Zalo application is located.
@@ -432,6 +528,9 @@ const installZaDark = async (zaloDir) => {
   if (!isFile(appAsarPath) && !isFile(appAsarBakPath)) {
     throw new Error(zaloDir + ' khong co tap tin "app.asar" hoac "app.asar.bak" (E002).')
   }
+
+  // Must run before touching app.asar: if it fails, Zalo PC is left unchanged
+  await disableAsarFuses(zaloDir)
 
   if (fs.existsSync(ZADARK_TMP_PATH)) {
     printDebug('- deleteDir:', ZADARK_TMP_PATH)
@@ -511,6 +610,8 @@ const uninstallZaDark = (zaloDir) => {
 
   printDebug('- renameFile:', appAsarBakPath, '>', appAsarPath)
   fs.renameSync(appAsarBakPath, appAsarPath)
+
+  restoreZaloExe(zaloDir)
 }
 
 module.exports = {
