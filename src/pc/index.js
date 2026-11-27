@@ -11,7 +11,8 @@ const {
   COMMON_ERRORS_URL,
   DEFAULT_ZALO_PATH,
   EXAMPLE_CUSTOM_ZALO_PATH,
-  DOCS_URL
+  DOCS_URL,
+  INSTALL_ON_NEW_ZALO_PC_URL
 } = require('./constants')
 
 const promptFeatureIndex = async () => {
@@ -211,8 +212,10 @@ const handleOpenDocs = () => {
     print('')
     printError(error.message)
 
-    openWebsite(COMMON_ERRORS_URL)
-    print(`Xem huong dan: ${COMMON_ERRORS_URL}`)
+    // Zalo PC moi bat ASAR integrity (E011): mo thang den huong dan cai dat nang cao
+    const errorsUrl = error.code === 'E011' ? INSTALL_ON_NEW_ZALO_PC_URL : COMMON_ERRORS_URL
+    openWebsite(errorsUrl)
+    print(`Xem huong dan: ${errorsUrl}`)
     //
   } finally {
     print('')

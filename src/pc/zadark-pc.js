@@ -1,12 +1,13 @@
 const fs = require('fs-extra')
 const path = require('path')
+const crossSpawn = require('cross-spawn')
 const asar = require('@electron/asar')
 const HTMLParser = require('node-html-parser')
 const glob = require('glob')
 
 const { printDebug, printError, isDirectory, isFile } = require('./utils')
 
-const { PLATFORM, IS_MAC, IS_WIN, OS_NAME, ZADARK_VERSION, ZADARK_TMP_PATH, ZALO_PROCESS_NAMES, ZADARK_API_DOMAIN } = require('./constants')
+const { PLATFORM, IS_MAC, IS_WIN, OS_NAME, ZADARK_VERSION, ZADARK_TMP_PATH, ZALO_PROCESS_NAMES, ZADARK_API_DOMAIN, INSTALL_ON_NEW_ZALO_PC_URL } = require('./constants')
 
 const psList = require('./packages/ps-list')
 
@@ -412,6 +413,215 @@ const copyZaDarkAssets = (zaloDir) => {
 }
 
 /**
+ * Builds an `unpack` glob pattern for `asar.createPackageWithOptions` that matches the files
+ * stored in `app.asar.unpacked` by the original archive, so the repacked archive keeps them unpacked.
+ *
+ * @param {string} archivePath - The path to the original `app.asar` file.
+ * @param {string} srcDir - The directory the archive was extracted to (and will be packed from).
+ *
+ * @returns {string|undefined} The glob pattern, or `undefined` if the archive has no unpacked files.
+ */
+const getUnpackPattern = (archivePath, srcDir) => {
+  const { header } = asar.getRawHeader(archivePath)
+
+  // Collapse directories whose files are all unpacked into a single "dir/**" pattern.
+  // "**" does not match dotfiles, so `dotPatterns` keeps the patterns still needed for them.
+  const collect = (node, segments) => {
+    if (!node.files) {
+      return { isAllUnpacked: !!node.unpacked, patterns: node.unpacked ? [segments] : [], dotPatterns: [] }
+    }
+
+    const results = Object.entries(node.files).map(([name, child]) => ({ name, ...collect(child, [...segments, name]) }))
+    const isAllUnpacked = results.length > 0 && results.every((result) => result.isAllUnpacked)
+
+    if (!isAllUnpacked) {
+      return { isAllUnpacked, patterns: results.flatMap((result) => result.patterns), dotPatterns: [] }
+    }
+
+    const dotPatterns = results.flatMap((result) => result.name.startsWith('.') ? result.patterns : result.dotPatterns)
+    return { isAllUnpacked, patterns: [[...segments, '**'], ...dotPatterns], dotPatterns }
+  }
+
+  const { patterns } = collect(header, [])
+  if (!patterns.length) {
+    return undefined
+  }
+
+  // minimatch converts "\" to "/" on Windows, so glob characters cannot be escaped.
+  // Replace them with "?" (any single character) instead.
+  const toGlobSegment = (segment) => segment.replace(/[*?[\]{}()!+@,|\\]/g, '?')
+  const srcSegments = path.resolve(srcDir).split(path.sep).map(toGlobSegment)
+
+  const globs = patterns.map((segments) => {
+    return [...srcSegments, ...segments.map((segment) => segment === '**' ? segment : toGlobSegment(segment))].join('/')
+  })
+
+  return globs.length === 1 ? globs[0] : `{${globs.join(',')}}`
+}
+
+// Electron stores the state of its "fuses" as a wire of bytes that follows a fixed
+// sentinel string inside the main binary. See https://www.electronjs.org/docs/latest/tutorial/fuses
+const FUSE_SENTINEL = Buffer.from('dL7pKGdnNz796PbbjQWNKmHXBZaB9tsX')
+const FUSE_STATE = { DISABLE: 0x30, ENABLE: 0x31 } // '0' / '1'
+// Position of "EnableEmbeddedAsarIntegrityValidation" in the FuseV1 wire (0-indexed)
+const ASAR_INTEGRITY_FUSE_INDEX = 4
+
+// Opt-in flag (env var ZADARK_DISABLE_ASAR_INTEGRITY=1). When set, ZaDark disables Zalo's ASAR
+// integrity validation so the patched `app.asar` can load on versions that enforce it.
+// It is OFF by default on purpose: ZaDark never disables Zalo's protection unless the user
+// deliberately opts in, having accepted the risks (see the docs linked from the E011 error).
+const isAsarIntegrityBypassEnabled = () => process.env.ZADARK_DISABLE_ASAR_INTEGRITY === '1'
+
+/**
+ * Resolves the path to Zalo's main Electron binary, which carries the Electron fuses.
+ *
+ * @param {string} zaloDir - The Zalo "resources" directory (`.../Contents/Resources` on macOS,
+ *   `.../Zalo-<version>/resources` on Windows).
+ *
+ * @returns {string} The path to the Electron binary.
+ */
+const getElectronBinaryPath = (zaloDir) => {
+  return IS_MAC
+    ? path.join(zaloDir, '../Frameworks/Electron Framework.framework/Electron Framework')
+    : path.join(zaloDir, '../Zalo.exe')
+}
+
+/**
+ * Finds every offset of the Electron fuse sentinel in a binary, scanning in chunks so the whole
+ * file (the Windows binary is ~240MB) never has to be read into memory at once.
+ *
+ * @param {number} fd - An open file descriptor.
+ * @param {number} fileSize - The size of the file in bytes.
+ *
+ * @returns {number[]} The sentinel offsets (universal macOS binaries contain one per architecture).
+ */
+const findFuseSentinels = (fd, fileSize) => {
+  const CHUNK_SIZE = 1 << 20
+  const overlap = FUSE_SENTINEL.length - 1
+  const buf = Buffer.alloc(CHUNK_SIZE)
+  const offsets = []
+
+  let filePos = 0
+  let tail = Buffer.alloc(0)
+
+  while (filePos < fileSize) {
+    const bytesRead = fs.readSync(fd, buf, 0, CHUNK_SIZE, filePos)
+    if (bytesRead <= 0) break
+
+    const haystack = Buffer.concat([tail, buf.subarray(0, bytesRead)])
+    let from = 0
+    let index
+    while ((index = haystack.indexOf(FUSE_SENTINEL, from)) !== -1) {
+      offsets.push(filePos - tail.length + index)
+      from = index + 1
+    }
+
+    tail = Buffer.from(haystack.subarray(Math.max(0, haystack.length - overlap)))
+    filePos += bytesRead
+  }
+
+  return offsets
+}
+
+const getAsarIntegrityFusePos = (sentinelOffset) => sentinelOffset + FUSE_SENTINEL.length + 2 + ASAR_INTEGRITY_FUSE_INDEX
+
+/**
+ * Reads the state of Zalo's ASAR integrity validation fuse.
+ *
+ * @param {string} zaloDir - The Zalo "resources" directory.
+ *
+ * @returns {'enabled'|'disabled'|null} The fuse state, or `null` when the binary is missing or has
+ *   no fuse wire (older Electron builds).
+ */
+const readAsarIntegrityFuseState = (zaloDir) => {
+  const binaryPath = getElectronBinaryPath(zaloDir)
+  if (!isFile(binaryPath)) {
+    return null
+  }
+
+  const fd = fs.openSync(binaryPath, 'r')
+  try {
+    const { size } = fs.fstatSync(fd)
+    const [sentinelOffset] = findFuseSentinels(fd, size)
+    if (sentinelOffset === undefined) {
+      return null
+    }
+
+    const state = Buffer.alloc(1)
+    fs.readSync(fd, state, 0, 1, getAsarIntegrityFusePos(sentinelOffset))
+    return state[0] === FUSE_STATE.ENABLE ? 'enabled' : 'disabled'
+  } finally {
+    fs.closeSync(fd)
+  }
+}
+
+/**
+ * @param {string} zaloDir - The Zalo "resources" directory.
+ * @returns {boolean} `true` if the ASAR integrity validation fuse exists and is enabled.
+ */
+const isAsarIntegrityEnabled = (zaloDir) => readAsarIntegrityFuseState(zaloDir) === 'enabled'
+
+/**
+ * Flips Zalo's ASAR integrity validation fuse, so the patched `app.asar` is accepted. On macOS this
+ * invalidates Zalo's code signature, so the app bundle is re-signed ad-hoc; be aware that this
+ * breaks Keychain access and the user will have to sign in to Zalo again.
+ *
+ * @param {string} zaloDir - The Zalo "resources" directory.
+ * @param {boolean} enable - `true` to re-enable the fuse (restore protection), `false` to disable it.
+ *
+ * @throws {Error} If the fuse cannot be changed or the macOS re-signing fails.
+ *
+ * @returns {void}
+ */
+const setZaloAsarIntegrity = (zaloDir, enable) => {
+  const binaryPath = getElectronBinaryPath(zaloDir)
+  if (!isFile(binaryPath)) {
+    return
+  }
+
+  const fd = fs.openSync(binaryPath, 'r+')
+  let sentinelCount = 0
+  try {
+    const { size } = fs.fstatSync(fd)
+    const offsets = findFuseSentinels(fd, size)
+    sentinelCount = offsets.length
+
+    const value = Buffer.from([enable ? FUSE_STATE.ENABLE : FUSE_STATE.DISABLE])
+    for (const offset of offsets) {
+      fs.writeSync(fd, value, 0, 1, getAsarIntegrityFusePos(offset))
+    }
+  } finally {
+    fs.closeSync(fd)
+  }
+
+  printDebug('- setZaloAsarIntegrity:', binaryPath, '>', enable ? 'enabled' : 'disabled', `(${sentinelCount})`)
+
+  if (sentinelCount === 0) {
+    throw new Error('Khong tim thay Electron fuses trong Zalo (E010).')
+  }
+
+  // Changing the fuse wire breaks the binary's code signature, so an arm64 macOS build will not
+  // launch until it is re-signed (ad-hoc is enough).
+  if (IS_MAC) {
+    // Keep only `entitlements` (camera, microphone, ...); preserving `requirements` would keep
+    // Zalo's original designated requirement, which an ad-hoc signature cannot satisfy, and the
+    // signature would fail to verify.
+    const appPath = path.resolve(zaloDir, '../..')
+    const result = crossSpawn.sync('codesign', [
+      '--force',
+      '--deep',
+      '--sign', '-',
+      '--preserve-metadata=entitlements',
+      appPath
+    ])
+
+    if (result.status !== 0) {
+      throw new Error('Khong the ky lai Zalo.app sau khi chinh ASAR integrity (E010).')
+    }
+  }
+}
+
+/**
  * Installs ZaDark by updating the `app.asar` file in the specified Zalo directory with the ZaDark theme.
  *
  * @param {string} zaloDir - The directory where the Zalo application is located.
@@ -431,6 +641,21 @@ const installZaDark = async (zaloDir) => {
 
   if (!isFile(appAsarPath) && !isFile(appAsarBakPath)) {
     throw new Error(zaloDir + ' khong co tap tin "app.asar" hoac "app.asar.bak" (E002).')
+  }
+
+  // Newer Zalo versions enable Electron's ASAR integrity validation and will not start once
+  // `app.asar` is patched. On these versions ZaDark refuses to install, unless the user explicitly
+  // opts in to disabling that protection (see isAsarIntegrityBypassEnabled).
+  const isIntegrityEnabled = isAsarIntegrityEnabled(zaloDir)
+  const shouldBypassIntegrity = isIntegrityEnabled && isAsarIntegrityBypassEnabled()
+
+  if (isIntegrityEnabled && !shouldBypassIntegrity) {
+    const error = new Error(
+      'Zalo PC phien ban nay da bat che do bao ve (ASAR integrity) nen ZaDark chua the cai dat (E011).\n' +
+      'Xem huong dan cai dat nang cao: ' + INSTALL_ON_NEW_ZALO_PC_URL
+    )
+    error.code = 'E011'
+    throw error
   }
 
   if (fs.existsSync(ZADARK_TMP_PATH)) {
@@ -464,6 +689,8 @@ const installZaDark = async (zaloDir) => {
   asar.uncacheAll()
   asar.extractAll(appAsarPath, appDirTmpPath)
 
+  const unpackPattern = getUnpackPattern(appAsarPath, appDirTmpPath)
+
   copyZaDarkAssets(ZADARK_TMP_PATH)
   writeIndexFile(ZADARK_TMP_PATH)
   writeBootstrapFile(ZADARK_TMP_PATH)
@@ -478,11 +705,15 @@ const installZaDark = async (zaloDir) => {
     fs.renameSync(appAsarPath, appAsarBakPath)
   }
 
-  // We do not package the "extracted app folder" into an app.asar file
-  // to resolve the issue with not being able to send images from the clipboard (https://github.com/ncdai/zadark/issues/190, https://github.com/ncdai/zadark/issues/199).
-  // Instead, rename the folder to app.asar so that Electron can launch it.
-  printDebug('- moveAppAsar:', appDirTmpPath, '>', appAsarPath)
-  await fs.move(appDirTmpPath, appAsarPath)
+  // Keep the original unpacked files (native modules, dylibs, etc.) outside the archive,
+  // otherwise sending images from the clipboard fails (https://github.com/ncdai/zadark/issues/190, https://github.com/ncdai/zadark/issues/199).
+  printDebug('- createAsar:', appDirTmpPath, '>', appAsarPath)
+  printDebug('- unpackPattern:', unpackPattern)
+  await asar.createPackageWithOptions(appDirTmpPath, appAsarPath, { unpack: unpackPattern })
+
+  if (shouldBypassIntegrity) {
+    setZaloAsarIntegrity(zaloDir, false)
+  }
 
   printDebug('- deleteDir:', ZADARK_TMP_PATH)
   fs.rmSync(ZADARK_TMP_PATH, { recursive: true })
@@ -511,6 +742,12 @@ const uninstallZaDark = (zaloDir) => {
 
   printDebug('- renameFile:', appAsarBakPath, '>', appAsarPath)
   fs.renameSync(appAsarBakPath, appAsarPath)
+
+  // Restore Zalo's protection if we disabled it during install (the original `app.asar` is back,
+  // so integrity validation will pass again).
+  if (isAsarIntegrityBypassEnabled() && readAsarIntegrityFuseState(zaloDir) === 'disabled') {
+    setZaloAsarIntegrity(zaloDir, true)
+  }
 }
 
 module.exports = {

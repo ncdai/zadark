@@ -35,6 +35,10 @@ const DOCS_URL = IS_MAC
   ? 'https://zadark.com/pc/macos'
   : 'https://zadark.com/pc/windows'
 
+const INSTALL_ON_NEW_ZALO_PC_URL = IS_MAC
+  ? 'https://zadark.com/pc/macos#install-zadark-on-new-zalo-pc'
+  : 'https://zadark.com/pc/windows#install-zadark-on-new-zalo-pc'
+
 const CONTACT_URL = 'https://zadark.com/contact'
 
 module.exports = {
@@ -53,5 +57,6 @@ module.exports = {
 
   COMMON_ERRORS_URL,
   DOCS_URL,
+  INSTALL_ON_NEW_ZALO_PC_URL,
   CONTACT_URL
 }
