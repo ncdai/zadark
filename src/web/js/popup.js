@@ -11,7 +11,6 @@ ZaDarkUtils.installFontFamily(['Open Sans:400;500;600'])
 
 const MSG_ACTIONS = ZaDarkUtils.MSG_ACTIONS
 
-const ratingElName = '#js-ext-rating'
 const btnScrollElName = '#js-btn-scroll'
 
 const radioInputThemeElName = '#js-radio-input-theme input:radio[name="theme"]'
@@ -29,8 +28,6 @@ const switchBlockSeenElName = '#js-switch-block-seen'
 const switchBlockDeliveredElName = '#js-switch-block-delivered'
 
 const switchUseHotkeysElName = '#js-switch-use-hotkeys'
-
-$(ratingElName).attr('href', ZaDarkUtils.getRatingURL(ZaDarkBrowser.name))
 
 ZaDarkBrowser.getExtensionSettings().then(async ({
   theme,
