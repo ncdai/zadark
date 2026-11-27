@@ -1,7 +1,7 @@
 {
   "name": "zadark-pc",
   "description": "Dark Mode cho Zalo",
-  "version": "26.3",
+  "version": "26.4",
   "main": "index.js",
   "repository": "https://github.com/ncdai/zadark.git",
   "author": {

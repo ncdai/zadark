@@ -1,5 +1,12 @@
 # Changelog
 
+## ZaDark 26.4
+
+- Đóng gói lại `app.asar` thành tập tin thay vì thư mục để tương thích với Zalo PC chạy trên Electron mới, vẫn giữ nguyên các tập tin `unpacked` nên không ảnh hưởng gửi ảnh từ Clipboard
+- Hỗ trợ Zalo PC phiên bản mới (từ `26.11.20`) đã bật cơ chế bảo vệ **ASAR integrity**:
+  - Mặc định ZaDark **không cài** trên các bản này mà hiển thị hướng dẫn, tránh làm Zalo PC không mở được
+  - Người dùng hiểu rủi ro có thể **chủ động** bật cờ `ZADARK_DISABLE_ASAR_INTEGRITY=1` để cài đặt. Xem hướng dẫn và cảnh báo cho [Windows](https://zadark.com/pc/windows#install-zadark-on-new-zalo-pc) hoặc [macOS](https://zadark.com/pc/macos#install-zadark-on-new-zalo-pc)
+
 ## ZaDark 26.3
 
 - Hỗ trợ Zalo PC `26.10.11`: Sửa lỗi mất giao diện ZaDark do Zalo gỡ stylesheet [#213](https://github.com/ncdai/zadark/pull/213)
